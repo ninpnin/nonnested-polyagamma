@@ -4,6 +4,7 @@ import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
 import tqdm
+import arviz as az
 
 y = np.array([1,0,1, 1, 1])
 n = len(y)
@@ -26,6 +27,7 @@ def log_post(a, b, y):
     return ll - 0.5 * a * a - 0.5 * b * b
 
 def metropolis(r=1000):
+    print("Use", int(r / 1000), "thinning")
     a_t, b_t = 0.0 ,0.0
 
     scale = 0.2
@@ -51,7 +53,7 @@ def metropolis(r=1000):
     df = pd.DataFrame(rows, columns=["a", "b"])
     return df
 
-n_metro = 100000
+n_metro = 10000
 df = metropolis(r=n_metro)
 df = df.tail(int(n_metro*0.9))
 print(df)
@@ -61,7 +63,10 @@ print(df.corr())
 print(df.mean())
 print(df.cov())
 
-sns.scatterplot(df.iloc[::3, :], x="a", y="b")
+ESS_a = az.ess(np.array(df["a"]))
+print("ESS", ESS_a, "as percentage", ESS_a / len(df["a"]))
+
+sns.scatterplot(df.iloc[::2, :], x="a", y="b")
 plt.show()
 plt.clf()
 
@@ -75,7 +80,7 @@ def pg_stuff(y):
     zeros = len(y) - np.sum(y)
     kappa = (ones - len(y)/2)
 
-    for _ in range(2000):
+    for _ in range(3000):
         #def step1():
         o = random_polyagamma(z=a_t * b_t, size=len(y))
         osum = np.sum(o)
@@ -95,12 +100,16 @@ def pg_stuff(y):
         rows.append([a_t, b_t])
 
     df = pd.DataFrame(rows, columns=["a", "b"])
-    df = df.tail(900)
+    df = df.tail(1000)
     return df
     #step1()
     #step1()
 
+print()
 df = pg_stuff(y)
+print("Polya-gamma")
+ESS_a = az.ess(np.array(df["a"]))
+print("ESS", ESS_a, "as percentage", ESS_a / len(df["a"]))
 print(df.corr())
 
 print(df.mean())
