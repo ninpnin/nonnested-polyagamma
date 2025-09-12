@@ -53,7 +53,7 @@ def metropolis(r=1000):
     df = pd.DataFrame(rows, columns=["a", "b"])
     return df
 
-n_metro = 10000
+n_metro = 1200
 df = metropolis(r=n_metro)
 df = df.tail(int(n_metro*0.9))
 print(df)
@@ -64,7 +64,10 @@ print(df.mean())
 print(df.cov())
 
 ESS_a = az.ess(np.array(df["a"]))
+probs = np.array(df["a"]) * np.array(df["b"])
+ESS_probs = az.ess(probs)
 print("ESS", ESS_a, "as percentage", ESS_a / len(df["a"]))
+print("ESS_probs", ESS_probs, "as percentage", ESS_probs / len(df["a"]))
 
 sns.scatterplot(df.iloc[::2, :], x="a", y="b")
 plt.show()
@@ -109,7 +112,10 @@ print()
 df = pg_stuff(y)
 print("Polya-gamma")
 ESS_a = az.ess(np.array(df["a"]))
+probs = np.array(df["a"]) * np.array(df["b"])
+ESS_probs = az.ess(probs)
 print("ESS", ESS_a, "as percentage", ESS_a / len(df["a"]))
+print("ESS_probs", ESS_probs, "as percentage", ESS_probs / len(df["a"]))
 print(df.corr())
 
 print(df.mean())
