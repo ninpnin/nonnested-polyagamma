@@ -2,16 +2,16 @@ from trainerlog import get_logger
 LOGGER = get_logger("benchmark", splitsec=True)
 LOGGER.info("Load modules...")
 import tensorflow as tf
-from polyagamma import random_polyagamma
+#from polyagamma import random_polyagamma
 import numpy as np
 import time
 import polars as pl
 
-def get_time():
+def get_time_seconds():
     return time.time_ns() / 1_000_000
 
 def get_delta(t0):
-    t1 = get_time()
+    t1 = get_time_seconds()
     delta = t1 - t0
     return delta, t1
 
@@ -30,6 +30,14 @@ def get_v_omega_tf(X, omega):
 
 def invert_v_omega_tf(V_inv):
     return tf.linalg.inv(V_inv)
+
+def invert_via_cholesky(V_inv, x):
+    L_inv = tf.linalg.cholesky(V_inv)
+
+    print(L_inv.shape)
+    print(x.shape)
+    #exit()
+
 
 
 
@@ -50,7 +58,9 @@ for L in Ls:
     V_inv_prime = V_inv_prime * 0.5 + tf.transpose(V_inv_prime, perm=[0,2,1]) * 0.5
     V_inv_prime += tf.eye(K * L, batch_shape=[D // L])
     LOGGER.train(f"V_inv_prime {V_inv_prime.shape}")
-    TIME = get_time()
+    TIME = get_time_seconds()
+
+    y_prime = tf.random.normal(K * L, batch_shape=D // L)
 
     for _ in  range(10):
         LOGGER.debug(f"Start")
@@ -82,6 +92,11 @@ for L in Ls:
         time_data["delta"] += [timedelta]
         time_data["phase"] += [f"cholesky-correlated-{L}"]
         #exit()
+
+        invert_via_cholesky(V_inv, y_prime)
+        timedelta, TIME = get_delta(TIME)
+        time_data["delta"] += [timedelta]
+        time_data["phase"] += [f"cholesky-solve-{L}"]
 
 LOGGER.info(f"V_inv: {V_inv.shape}")
 
